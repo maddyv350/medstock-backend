@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'url';
 import bcrypt from 'bcryptjs';
 import db, { initSchema } from './index.js';
 
@@ -7,7 +8,7 @@ import db, { initSchema } from './index.js';
  *
  * Safe to re-run: it only inserts rows that don't already exist.
  */
-function seed() {
+export function seed() {
   initSchema();
 
   // --- Users ---------------------------------------------------------------
@@ -92,4 +93,21 @@ function seed() {
   console.log('   Staff login: staff@medical.com / staff123');
 }
 
-seed();
+/**
+ * Seed only if the database has no users yet. Called on server boot so a fresh
+ * deploy (or an ephemeral filesystem) always has a working admin login, while
+ * an existing database with real data is left untouched.
+ */
+export function seedIfEmpty() {
+  initSchema();
+  const { n } = db.prepare('SELECT COUNT(*) AS n FROM users').get();
+  if (n === 0) {
+    console.log('No users found — seeding initial data…');
+    seed();
+  }
+}
+
+// Run the full seed when executed directly: `node src/db/seed.js`
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  seed();
+}

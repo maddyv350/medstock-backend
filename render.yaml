@@ -1,0 +1,41 @@
+# Render Blueprint for the MedStore backend.
+# Deploy: Render Dashboard → New → Blueprint → pick this repo.
+# Docs: https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: medstock-backend
+    runtime: node
+    plan: free
+    region: oregon          # change to a region near you (e.g. frankfurt, singapore)
+    branch: main
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: JWT_SECRET
+        generateValue: true # Render generates a strong random secret
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: CORS_ORIGIN
+        value: "*"          # tighten to your admin panel origin in production
+
+    # ---------------------------------------------------------------------------
+    # PERSISTENT DATA (recommended for real use)
+    # The free plan has an EPHEMERAL disk: the SQLite file is wiped on every
+    # deploy/restart, so data added via the admin panel is lost (the app re-seeds
+    # demo data on boot so it still works).
+    #
+    # To keep data, switch `plan: free` above to `plan: starter` (paid), then
+    # uncomment the disk + DATA_DIR env var below and redeploy:
+    #
+    #   - key: DATA_DIR
+    #     value: /var/data
+    #
+    # disk:
+    #   name: medstock-data
+    #   mountPath: /var/data
+    #   sizeGB: 1
+    # ---------------------------------------------------------------------------

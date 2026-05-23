@@ -13,6 +13,37 @@ npm start              # or: npm run dev  (watch mode)
 
 Server: `http://localhost:4000`
 
+> The server also **auto-seeds on boot if the database is empty**, so a fresh
+> clone or a cloud deploy always has a working admin login without running the
+> seed manually.
+
+## Deploy to Render
+
+This repo includes a [`render.yaml`](render.yaml) blueprint.
+
+1. Push to GitHub (already done: `maddyv350/medstock-backend`).
+2. Render Dashboard → **New → Blueprint** → select this repo → **Apply**.
+   - Render reads `render.yaml`: builds with `npm install`, starts with
+     `npm start`, health-checks `/api/health`, and generates a random
+     `JWT_SECRET`.
+3. When it goes live you'll get a URL like `https://medstock-backend.onrender.com`.
+   Verify: open `…/api/health`.
+
+Then point the clients at it:
+- **Flutter app:** `flutter run --dart-define=API_URL=https://medstock-backend.onrender.com`
+- **Admin panel:** build with `VITE_API_URL=https://medstock-backend.onrender.com/api`
+
+### ⚠️ Data persistence
+The **free** plan's disk is **ephemeral** — the SQLite file is wiped on every
+deploy/restart (and the service spins down after ~15 min idle, so the first
+request after a cold start is slow). Demo data is re-seeded automatically, but
+anything added via the admin panel is **lost**.
+
+To keep data, edit `render.yaml`: set `plan: starter` (paid), then uncomment the
+`disk:` block and the `DATA_DIR=/var/data` env var, and redeploy. `DATA_DIR`
+moves the SQLite file onto the mounted persistent disk. (For higher write
+volume, migrating to Render Postgres is the longer-term option.)
+
 ## Demo accounts (created by the seed)
 
 | Role  | Email             | Password   |
@@ -64,8 +95,9 @@ filters.
 
 ## Config (`.env`)
 ```
-PORT=4000
+PORT=4000             # set automatically by Render
 JWT_SECRET=...        # change in production
 JWT_EXPIRES_IN=7d
 CORS_ORIGIN=*         # or comma-separated origins
+DATA_DIR=             # optional: dir for the SQLite file (e.g. /var/data on a Render disk)
 ```
