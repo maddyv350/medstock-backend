@@ -3,7 +3,7 @@ import express from 'express';
 import cors from 'cors';
 
 import { initSchema } from './db/index.js';
-import { seedIfEmpty } from './db/seed.js';
+import { ensureDefaultUsers } from './db/seed.js';
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/users.js';
 import categoryRoutes from './routes/categories.js';
@@ -13,7 +13,7 @@ import dashboardRoutes from './routes/dashboard.js';
 import publicRoutes from './routes/public.js';
 
 initSchema();
-seedIfEmpty();
+ensureDefaultUsers(); // always keep a working admin login; no demo catalogue
 
 const app = express();
 

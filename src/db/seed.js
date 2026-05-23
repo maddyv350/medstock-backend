@@ -8,10 +8,13 @@ import db, { initSchema } from './index.js';
  *
  * Safe to re-run: it only inserts rows that don't already exist.
  */
-export function seed() {
+/**
+ * Create the default login accounts if they don't exist. No catalogue data.
+ * This runs on every boot so a deploy always has a usable admin login, while
+ * leaving the product/category/shortage tables empty for real data entry.
+ */
+export function ensureDefaultUsers() {
   initSchema();
-
-  // --- Users ---------------------------------------------------------------
   const adminPass = bcrypt.hashSync('admin123', 10);
   const staffPass = bcrypt.hashSync('staff123', 10);
 
@@ -20,6 +23,11 @@ export function seed() {
   );
   insertUser.run('Store Admin', 'admin@medical.com', adminPass, 'admin');
   insertUser.run('Counter Staff', 'staff@medical.com', staffPass, 'staff');
+}
+
+export function seed() {
+  initSchema();
+  ensureDefaultUsers();
 
   // --- Categories ----------------------------------------------------------
   const categories = [
@@ -93,21 +101,7 @@ export function seed() {
   console.log('   Staff login: staff@medical.com / staff123');
 }
 
-/**
- * Seed only if the database has no users yet. Called on server boot so a fresh
- * deploy (or an ephemeral filesystem) always has a working admin login, while
- * an existing database with real data is left untouched.
- */
-export function seedIfEmpty() {
-  initSchema();
-  const { n } = db.prepare('SELECT COUNT(*) AS n FROM users').get();
-  if (n === 0) {
-    console.log('No users found — seeding initial data…');
-    seed();
-  }
-}
-
-// Run the full seed when executed directly: `node src/db/seed.js`
+// Run the full sample seed when executed directly: `node src/db/seed.js`
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   seed();
 }
